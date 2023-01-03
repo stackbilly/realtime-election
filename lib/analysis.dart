@@ -93,7 +93,7 @@ class GeneralAnalysis extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.all(20.0),
                 child: Text(
-                  "Progress",
+                  "Counting Progress",
                   style: TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.w500,

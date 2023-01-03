@@ -299,11 +299,10 @@ class CategoryResults extends StatelessWidget {
                           ),
                           subtitle: Text(
                             data.docs[index]['regNo'],
-                            style: const TextStyle(
-                                fontSize: 17, fontWeight: FontWeight.w500),
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           trailing: Text(
-                            "Votes ${data.docs[index]['votes'].toString()}",
+                            "${data.docs[index]['votes'].toString()} votes",
                             style: const TextStyle(
                                 color: Colors.red,
                                 fontWeight: FontWeight.w500,

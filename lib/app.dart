@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
       text: "Faculty Reps",
     ),
     Tab(
-      text: "Governing Council",
+      text: "Gov-Council",
     )
   ];
 

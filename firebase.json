@@ -1,6 +1,7 @@
 {
   "hosting": {
     "public": "build/web",
+    "site": "realtime-election",
     "ignore": [
       "firebase.json",
       "**/.*",
