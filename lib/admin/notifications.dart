@@ -211,20 +211,13 @@ class ViewNotifications extends StatelessWidget {
                                   fontWeight: FontWeight.w500, fontSize: 17),
                             ),
                           ),
-                          Positioned(
-                            bottom: 10.0,
-                            left: 10.0,
-                            child: TextButton.icon(
-                                onPressed: (() => false),
-                                icon: Icon(
-                                  Icons.notification_important,
-                                  color: Colors.red.shade900,
-                                ),
-                                label: Text(
-                                  "Information",
-                                  style: TextStyle(color: Colors.red.shade800),
-                                )),
-                          ),
+                          const Positioned(
+                              bottom: 10.0,
+                              left: 10.0,
+                              child: Icon(
+                                Icons.notification_important,
+                                color: Colors.red,
+                              )),
                           Positioned(
                             left: 150.0,
                             bottom: 10.0,

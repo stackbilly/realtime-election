@@ -1,0 +1,6 @@
+flutter_icons:
+  web:
+    generate: true
+    image_path: "assets/favicon.png"
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
