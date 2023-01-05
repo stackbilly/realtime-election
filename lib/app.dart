@@ -111,12 +111,11 @@ class _HomePageState extends State<HomePage> {
                     icon: (size == 0)
                         ? const Icon(Icons.notifications)
                         : const Icon(
-                            Icons.notification_add,
-                            color: Colors.red,
+                            Icons.notifications_active_rounded,
                           ),
                     tooltip: (size == 0)
                         ? 'No new notifcations'
-                        : 'You have $size new notfications',
+                        : 'You have $size notfications',
                   )
                 ],
                 bottom: const TabBar(

@@ -19,8 +19,10 @@ class AdminHome extends StatefulWidget {
 
 class _AdminHomeState extends State<AdminHome> {
   final GlobalKey<FormState> _formKey = GlobalKey();
+  final GlobalKey<FormState> formKey = GlobalKey();
 
   TextEditingController valueController = TextEditingController();
+  TextEditingController daysController = TextEditingController();
 
   ProjectUtilities utilities = ProjectUtilities();
   RealtimeElection realtime = const RealtimeElection();
@@ -28,6 +30,7 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   void dispose() {
     valueController.dispose();
+    daysController.dispose();
 
     super.dispose();
   }
@@ -42,6 +45,19 @@ class _AdminHomeState extends State<AdminHome> {
       Map<String, dynamic> data = snapshot.data()! as Map<String, dynamic>;
 
       transaction.update(votesReference, {field: data[field] + newCount});
+    });
+  }
+
+  Future<void> setDays(Duration value) async {
+    DocumentReference documentReference =
+        FirebaseFirestore.instance.collection("days").doc("days");
+    return FirebaseFirestore.instance.runTransaction((transaction) async {
+      transaction.set(documentReference, {
+        'days': value.inDays,
+        'hours': value.inHours % 24,
+        'minutes': value.inMinutes % 60,
+        'seconds': value.inSeconds % 60,
+      });
     });
   }
 
@@ -209,6 +225,76 @@ class _AdminHomeState extends State<AdminHome> {
                                     theme: widget.isDarkTheme,
                                     user: User.admin,
                                   )))),
+                            ),
+                            ListTile(
+                              title: const Text(
+                                "Timer",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white60,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              leading: const Icon(
+                                Icons.access_time,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              onTap: (() {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        content: SizedBox(
+                                          height: 150,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(20.0),
+                                                child: Form(
+                                                  key: formKey,
+                                                  child: TextFormField(
+                                                    validator: (value) {
+                                                      if (value == null ||
+                                                          value.isEmpty) {
+                                                        return "days cannot be empty";
+                                                      } else {
+                                                        return null;
+                                                      }
+                                                    },
+                                                    controller: daysController,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                            labelText: 'Days'),
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: (() {
+                                                  if (formKey.currentState!
+                                                      .validate()) {
+                                                    setDays(Duration(
+                                                            days: int.tryParse(
+                                                                daysController
+                                                                    .text)!))
+                                                        .then((value) =>
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop());
+                                                  }
+                                                }),
+                                                child: const Text("Set"),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    });
+                              }),
                             ),
                             ListTile(
                               title: const Text(
@@ -571,7 +657,7 @@ class _AdminHomeState extends State<AdminHome> {
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),

@@ -232,7 +232,7 @@ class ViewNotifications extends StatelessWidget {
                                 ? IconButton(
                                     onPressed: (() {
                                       notifications
-                                          .doc(data.docs[data.size - 1].id)
+                                          .doc(data.docs[index].reference.id)
                                           .delete();
                                     }),
                                     icon: const Icon(Icons.delete),
@@ -252,29 +252,3 @@ class ViewNotifications extends StatelessWidget {
     );
   }
 }
-
-// class NotificationsView extends StatelessWidget {
-//   const NotificationsView({super.key, required this.theme});
-
-//   final bool theme;
-
-//   @override
-//   Widget build(BuildContext context){
-//     return MaterialApp(
-//       title: "Notifications View",
-//       debugShowCheckedModeBanner: false,
-//       darkTheme: ThemeData.dark(),
-//       themeMode: (theme) ? ThemeMode.dark : ThemeMode.light,
-//       home: Scaffold(
-//         appBar: AppBar(
-//           title: const Text("Notifications View"),
-//           leading: InkWell(
-//             onTap: (() => Navigator.of(context).pop()),
-//             child: const Icon(Icons.arrow_back),
-//           ),
-//         ),
-//         body: ,
-//       ),
-//     )
-//   }
-// }
