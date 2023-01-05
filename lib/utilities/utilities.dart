@@ -1,5 +1,6 @@
-import 'package:crypt/crypt.dart';
 import 'package:flutter/material.dart';
+
+enum User { admin, normal }
 
 class ProjectUtilities {
   Widget adminContainers(double x, double y, String text1, String text2,
@@ -61,22 +62,5 @@ class ProjectUtilities {
       ),
       onTap: callback,
     );
-  }
-
-  String hashPassword(String pass) {
-    return Crypt.sha512(pass).toString();
-  }
-
-  bool isValid(String hashedPassword, String enteredPassword) {
-    bool isValid = false;
-    final crypt = Crypt(hashedPassword);
-    if (crypt.match(enteredPassword)) {
-      isValid = true;
-    }
-    if (!crypt.match(enteredPassword)) {
-      isValid = false;
-    }
-
-    return isValid;
   }
 }

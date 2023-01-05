@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:realtime_election/admin/notifications.dart';
 import 'package:realtime_election/app.dart';
 import 'package:realtime_election/utilities/utilities.dart';
 
@@ -165,9 +166,14 @@ class _SubAdminHomeState extends State<SubAdminHome> {
                                     });
                               }),
                             ),
-                            utilities.listTiles("Reports", Icons.save, () {}),
                             utilities.listTiles(
-                                "Support", Icons.computer, () {}),
+                                "Notifications", Icons.notifications, () {
+                              Navigator.of(context)
+                                  .push(realtime.route(ViewNotifications(
+                                theme: widget.isDarkTheme,
+                                user: User.normal,
+                              )));
+                            }),
                             utilities.listTiles("Logout", Icons.logout, () {
                               Navigator.of(context).pushAndRemoveUntil(
                                   realtime.route(

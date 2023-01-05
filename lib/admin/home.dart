@@ -5,6 +5,7 @@ import 'package:realtime_election/admin/add_admin.dart';
 import 'package:realtime_election/admin/candidate/candidate.dart';
 import 'package:realtime_election/admin/candidate/edit_candidate.dart';
 import 'package:realtime_election/admin/candidate/new_candidate.dart';
+import 'package:realtime_election/admin/notifications.dart';
 import 'package:realtime_election/app.dart';
 import 'package:realtime_election/utilities/utilities.dart';
 
@@ -117,9 +118,10 @@ class _AdminHomeState extends State<AdminHome> {
                                 color: Colors.white,
                               ),
                               trailing: IconButton(
-                                onPressed: (() => Navigator.of(context).push(
-                                    realtime.route(CreateCategory(
-                                        theme: widget.isDarkTheme)))),
+                                onPressed: (() => Navigator.of(context)
+                                        .push(realtime.route(CreateCategory(
+                                      theme: widget.isDarkTheme,
+                                    )))),
                                 icon: const Icon(
                                   Icons.add,
                                   color: Colors.white,
@@ -180,9 +182,34 @@ class _AdminHomeState extends State<AdminHome> {
                                     });
                               }),
                             ),
-                            utilities.listTiles("Reports", Icons.save, () {}),
-                            utilities.listTiles(
-                                "Notifications", Icons.computer, () {}),
+                            ListTile(
+                              title: const Text(
+                                "Notifications",
+                                style: TextStyle(
+                                    color: Colors.white60,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16),
+                              ),
+                              leading: const Icon(
+                                Icons.notifications,
+                                color: Colors.white,
+                              ),
+                              trailing: IconButton(
+                                onPressed: (() => Navigator.of(context).push(
+                                    realtime.route(AddNotification(
+                                        theme: widget.isDarkTheme)))),
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              onTap: (() => Navigator.of(context)
+                                      .push(realtime.route(ViewNotifications(
+                                    theme: widget.isDarkTheme,
+                                    user: User.admin,
+                                  )))),
+                            ),
                             ListTile(
                               title: const Text(
                                 "Admin",
@@ -549,8 +576,10 @@ class _AdminHomeState extends State<AdminHome> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: (() => Navigator.of(context).push(
-                realtime.route(CreateCategory(theme: widget.isDarkTheme)))),
+            onPressed: (() =>
+                Navigator.of(context).push(realtime.route(CreateCategory(
+                  theme: widget.isDarkTheme,
+                )))),
             child: const Icon(
               Icons.add,
               size: 25,
@@ -688,10 +717,11 @@ class _CreateCategoryState extends State<CreateCategory> {
                           child: ElevatedButton(
                             onPressed: (() {
                               if (_formKey.currentState!.validate()) {
-                                save().then((value) => Navigator.of(context)
-                                    .pushAndRemoveUntil(
+                                save().then((value) =>
+                                    Navigator.of(context).pushAndRemoveUntil(
                                         realtime.route(AdminHome(
-                                            isDarkTheme: widget.theme)),
+                                          isDarkTheme: widget.theme,
+                                        )),
                                         (route) => false));
                               }
                             }),

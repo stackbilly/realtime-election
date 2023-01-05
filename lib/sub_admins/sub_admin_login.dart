@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:realtime_election/sub_admins/sub_admin_home.dart';
 import 'package:realtime_election/utilities/utilities.dart';
@@ -6,10 +6,10 @@ import 'package:realtime_election/utilities/utilities.dart';
 import '../app.dart';
 
 class SubAdminLogin extends StatefulWidget {
-  const SubAdminLogin({super.key, required this.theme, required this.id});
+  const SubAdminLogin({super.key, required this.theme});
 
   final bool theme;
-  final String id;
+
   @override
   State<SubAdminLogin> createState() => _SubAdminLoginState();
 }
@@ -17,27 +17,55 @@ class SubAdminLogin extends StatefulWidget {
 class _SubAdminLoginState extends State<SubAdminLogin> {
   final GlobalKey<FormState> _formKey = GlobalKey();
 
-  TextEditingController? keyIdController;
+  TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
-
-  CollectionReference ref =
-      FirebaseFirestore.instance.collection("election-admins");
 
   ProjectUtilities utilities = ProjectUtilities();
 
   @override
-  void initState() {
-    super.initState();
-
-    keyIdController = TextEditingController(text: widget.id);
-  }
-
-  @override
   void dispose() {
-    keyIdController!.dispose();
+    emailController.dispose();
     passwordController.dispose();
 
     super.dispose();
+  }
+
+  bool isUser = false;
+
+  Future<void> login() async {
+    //no persistence for the application
+    await FirebaseAuth.instance.setPersistence(Persistence.NONE);
+    try {
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: emailController.text, password: passwordController.text);
+      if (userCredential.user != null) {
+        setState(() {
+          isUser = true;
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const AlertDialog(
+                content: SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Text(
+                      "Incorrect Login Credentials!",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17),
+                    ),
+                  ),
+                ),
+              );
+            }));
+      }
+    }
   }
 
   @override
@@ -83,16 +111,16 @@ class _SubAdminLoginState extends State<SubAdminLogin> {
                       child: TextFormField(
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return "Key id cannot be null";
+                            return "email cannot be null";
                           } else {
                             return null;
                           }
                         },
                         readOnly: true,
-                        controller: keyIdController,
+                        controller: emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                            labelText: 'Key id',
+                            labelText: 'E-mail',
                             prefixIcon: const Icon(Icons.insert_drive_file),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0))),
@@ -120,54 +148,23 @@ class _SubAdminLoginState extends State<SubAdminLogin> {
                       ),
                     ),
                     Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: FutureBuilder(
-                          future: ref.doc(keyIdController!.text.trim()).get(),
-                          builder: (_, snapshot) {
-                            Map<String, dynamic> data = {};
-                            if (snapshot.hasData) {
-                              data =
-                                  snapshot.data!.data() as Map<String, dynamic>;
-                            }
-                            return ElevatedButton(
-                              onPressed: (() {
-                                if (utilities.isValid(
-                                    data['password'].toString(),
-                                    passwordController.text)) {
-                                  Navigator.of(context).push(
-                                      const RealtimeElection().route(
-                                          SubAdminHome(
-                                              isDarkTheme: widget.theme)));
-                                } else {
-                                  showDialog(
-                                      context: context,
-                                      builder: ((context) {
-                                        return const AlertDialog(
-                                          content: SizedBox(
-                                            height: 100,
-                                            child: Center(
-                                              child: Text(
-                                                "Invalid Credentials!",
-                                                style: TextStyle(
-                                                    color: Colors.red,
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }));
-                                }
-                              }),
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red[800],
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0)),
-                                  minimumSize: const Size(130, 50)),
-                              child: const Text("Login"),
-                            );
-                          },
-                        ))
+                      padding: const EdgeInsets.all(20.0),
+                      child: ElevatedButton(
+                        onPressed: (() {
+                          if (_formKey.currentState!.validate()) {
+                            login().then((value) {
+                              if (isUser) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                    const RealtimeElection().route(SubAdminHome(
+                                        isDarkTheme: widget.theme)),
+                                    (route) => false);
+                              }
+                            });
+                          }
+                        }),
+                        child: const Text("Login"),
+                      ),
+                    )
                   ],
                 ),
               ),

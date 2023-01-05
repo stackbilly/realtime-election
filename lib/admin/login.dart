@@ -1,14 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:realtime_election/admin/home.dart';
 import 'package:realtime_election/app.dart';
+import 'package:realtime_election/sub_admins/sub_admin_login.dart';
 import 'package:realtime_election/utilities/utilities.dart';
 
 class AdminLogin extends StatefulWidget {
-  const AdminLogin({super.key, required this.theme, required this.id});
+  const AdminLogin({super.key, required this.theme});
 
   final bool theme;
-  final String id;
   @override
   State<AdminLogin> createState() => _AdminLoginState();
 }
@@ -16,30 +16,63 @@ class AdminLogin extends StatefulWidget {
 class _AdminLoginState extends State<AdminLogin> {
   final GlobalKey<FormState> _formKey = GlobalKey();
 
-  TextEditingController? keyIdController;
+  TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
   ProjectUtilities utilities = ProjectUtilities();
 
-  @override
-  void initState() {
-    super.initState();
-
-    keyIdController = TextEditingController(text: widget.id);
-  }
+  bool isUser = false;
 
   @override
   void dispose() {
-    keyIdController!.dispose();
+    emailController.dispose();
     passwordController.dispose();
 
     super.dispose();
   }
 
+  ///
+  ///@login - handles admin login into the application
+  ///
+
+  Future<void> login() async {
+    //no persistence for the application
+    await FirebaseAuth.instance.setPersistence(Persistence.NONE);
+    try {
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: emailController.text, password: passwordController.text);
+      if (userCredential.user != null) {
+        setState(() {
+          isUser = true;
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const AlertDialog(
+                content: SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Text(
+                      "Incorrect Login Credentials!",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17),
+                    ),
+                  ),
+                ),
+              );
+            }));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    CollectionReference ref =
-        FirebaseFirestore.instance.collection('election-admins');
     return MaterialApp(
       title: "Admin Login",
       debugShowCheckedModeBanner: false,
@@ -52,6 +85,14 @@ class _AdminLoginState extends State<AdminLogin> {
             onTap: (() => Navigator.of(context).pop()),
             child: const Icon(Icons.arrow_back),
           ),
+          actions: [
+            IconButton(
+              onPressed: (() => Navigator.of(context).push(
+                  const RealtimeElection()
+                      .route(SubAdminLogin(theme: widget.theme)))),
+              icon: const Icon(Icons.arrow_forward_ios_outlined),
+            )
+          ],
         ),
         body: Center(
           child: SizedBox(
@@ -81,16 +122,15 @@ class _AdminLoginState extends State<AdminLogin> {
                         child: TextFormField(
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return "Key id cannot be null";
+                              return "email cannot be null";
                             } else {
                               return null;
                             }
                           },
-                          controller: keyIdController,
-                          readOnly: true,
+                          controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                              labelText: 'Key id',
+                              labelText: 'E-mail',
                               prefixIcon: const Icon(Icons.email),
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8.0))),
@@ -118,55 +158,23 @@ class _AdminLoginState extends State<AdminLogin> {
                         ),
                       ),
                       Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: FutureBuilder(
-                            future: ref.doc(keyIdController!.text.trim()).get(),
-                            builder: (_, snapshot) {
-                              Map<String, dynamic> data = {};
-                              if (snapshot.hasData) {
-                                data = snapshot.data!.data()
-                                    as Map<String, dynamic>;
-                              }
-                              return ElevatedButton(
-                                onPressed: (() {
-                                  if (utilities.isValid(
-                                      data['password'].toString(),
-                                      passwordController.text)) {
-                                    Navigator.of(context).push(
-                                        const RealtimeElection().route(
-                                            AdminHome(
-                                                isDarkTheme: widget.theme)));
-                                  } else {
-                                    showDialog(
-                                        context: context,
-                                        builder: ((context) {
-                                          return const AlertDialog(
-                                            content: SizedBox(
-                                              height: 100,
-                                              child: Center(
-                                                child: Text(
-                                                  "Invalid Credentials!",
-                                                  style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontWeight:
-                                                          FontWeight.w500),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }));
-                                  }
-                                }),
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red[800],
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(8.0)),
-                                    minimumSize: const Size(130, 50)),
-                                child: const Text("Login"),
-                              );
-                            },
-                          ))
+                        padding: const EdgeInsets.all(20.0),
+                        child: ElevatedButton(
+                          onPressed: (() {
+                            if (_formKey.currentState!.validate()) {
+                              login().then((value) {
+                                if (isUser) {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                      const RealtimeElection().route(
+                                          AdminHome(isDarkTheme: widget.theme)),
+                                      (route) => false);
+                                }
+                              });
+                            }
+                          }),
+                          child: const Text("Login"),
+                        ),
+                      )
                     ]),
               ),
             ),

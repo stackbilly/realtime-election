@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:realtime_election/app.dart';
 import 'package:realtime_election/utilities/utilities.dart';
@@ -14,16 +15,18 @@ class AddAdmin extends StatefulWidget {
 class _AddAdminState extends State<AddAdmin> {
   final GlobalKey<FormState> _formKey = GlobalKey();
 
-  TextEditingController keyIdController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
 
   ProjectUtilities utilities = ProjectUtilities();
 
+  bool isUser = false;
+
   @override
   void dispose() {
     usernameController.dispose();
-    keyIdController.dispose();
+    emailController.dispose();
     passwordController.dispose();
 
     super.dispose();
@@ -32,13 +35,64 @@ class _AddAdminState extends State<AddAdmin> {
   Future<void> createSubAdmin() async {
     return FirebaseFirestore.instance
         .collection('election-admins')
-        .doc(keyIdController.text)
+        .doc(emailController.text.trim())
         .set({
-      "id": keyIdController.text,
+      "email": emailController.text,
       "username": usernameController.text,
-      "type": "SUBADMIN",
-      "password": utilities.hashPassword(passwordController.text).toString()
     });
+  }
+
+  Future<void> _register() async {
+    try {
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+              email: emailController.text, password: passwordController.text);
+      if (userCredential.user != null) {
+        setState(() {
+          isUser = true;
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const AlertDialog(
+                content: SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Text(
+                      "Weak password provided!",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17),
+                    ),
+                  ),
+                ),
+              );
+            }));
+      } else if (e.code == 'email-already-in-use') {
+        showDialog(
+            context: context,
+            builder: ((context) {
+              return const AlertDialog(
+                content: SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Text(
+                      "E-mail already in use!",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17),
+                    ),
+                  ),
+                ),
+              );
+            }));
+      }
+    }
   }
 
   @override
@@ -109,11 +163,11 @@ class _AddAdminState extends State<AddAdmin> {
                             return null;
                           }
                         },
-                        controller: keyIdController,
+                        controller: emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                            labelText: 'Key Id',
-                            prefixIcon: const Icon(Icons.insert_drive_file),
+                            labelText: 'E-mail',
+                            prefixIcon: const Icon(Icons.email),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0))),
                       ),
@@ -144,10 +198,19 @@ class _AddAdminState extends State<AddAdmin> {
                         child: ElevatedButton(
                           onPressed: (() {
                             if (_formKey.currentState!.validate()) {
-                              createSubAdmin().then((value) =>
-                                  Navigator.of(context).push(
-                                      const RealtimeElection().route(
-                                          SubAdmins(theme: widget.theme))));
+                              _register().then(
+                                (value) {
+                                  if (isUser) {
+                                    createSubAdmin();
+                                    passwordController.clear();
+                                    usernameController.clear();
+                                    emailController.clear();
+                                    Navigator.of(context).push(
+                                        const RealtimeElection().route(
+                                            SubAdmins(theme: widget.theme)));
+                                  }
+                                },
+                              );
                             }
                           }),
                           style: ElevatedButton.styleFrom(
@@ -227,7 +290,7 @@ class SubAdmins extends StatelessWidget {
                 return ListTile(
                   title: Text(data.docs[index]['username']),
                   onTap: (() => true),
-                  subtitle: Text(data.docs[index]['id']),
+                  subtitle: Text(data.docs[index]['email']),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: (() => showDialog(
@@ -248,7 +311,7 @@ class SubAdmins extends StatelessWidget {
                                     onPressed: (() {
                                       FirebaseFirestore.instance
                                           .collection('election-admins')
-                                          .doc(data.docs[index]['id'])
+                                          .doc(data.docs[index]['email'])
                                           .delete();
                                     }),
                                     child: const Text("Delete"),

@@ -1,11 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:realtime_election/admin/login.dart';
+import 'package:realtime_election/admin/notifications.dart';
 import 'package:realtime_election/analysis.dart';
-import 'package:realtime_election/sub_admins/sub_admin_login.dart';
 import 'package:realtime_election/tabs/faculty_tab.dart';
 import 'package:realtime_election/tabs/general_tab.dart';
 import 'package:realtime_election/tabs/governing_council_tab.dart';
+import 'package:realtime_election/utilities/utilities.dart';
 
 class RealtimeElection extends StatelessWidget {
   const RealtimeElection({Key? key}) : super(key: key);
@@ -53,6 +55,24 @@ class _HomePageState extends State<HomePage> {
     )
   ];
 
+  int size = 0;
+
+  Future<int> notification() async {
+    QuerySnapshot notifications =
+        await FirebaseFirestore.instance.collection("notifications").get();
+    setState(() {
+      size = notifications.size;
+    });
+    return size;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    notification();
+  }
+
   final RealtimeElection realtime = const RealtimeElection();
   @override
   Widget build(BuildContext context) {
@@ -78,6 +98,25 @@ class _HomePageState extends State<HomePage> {
                             Icons.dark_mode,
                           ),
                     tooltip: (widget.theme) ? 'Light mode' : 'Dark mode',
+                  ),
+                  IconButton(
+                    onPressed: (() {
+                      notification();
+                      Navigator.of(context)
+                          .push(realtime.route(ViewNotifications(
+                        theme: widget.theme,
+                        user: User.normal,
+                      )));
+                    }),
+                    icon: (size == 0)
+                        ? const Icon(Icons.notifications)
+                        : const Icon(
+                            Icons.notification_add,
+                            color: Colors.red,
+                          ),
+                    tooltip: (size == 0)
+                        ? 'No new notifcations'
+                        : 'You have $size new notfications',
                   )
                 ],
                 bottom: const TabBar(
@@ -105,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                                   child: InkWell(
                                     onLongPress: (() => Navigator.of(context)
                                         .push(realtime.route(
-                                            AdminRoute(theme: widget.theme)))),
+                                            AdminLogin(theme: widget.theme)))),
                                     child: const Text(
                                       'Realtime Election',
                                       style: TextStyle(
@@ -116,12 +155,29 @@ class _HomePageState extends State<HomePage> {
                                   )))),
                     ),
                     ListTile(
-                      leading: const Icon(
-                        Icons.summarize,
-                      ),
-                      title: const Text('Summary'),
-                      onTap: (() => true),
-                    ),
+                        leading: const Icon(
+                          Icons.notifications,
+                        ),
+                        title: const Text('Notifications'),
+                        onTap: (() => Navigator.of(context)
+                                .push(realtime.route(ViewNotifications(
+                              theme: widget.theme,
+                              user: User.normal,
+                            )))),
+                        trailing: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: const BoxDecoration(
+                              shape: BoxShape.circle, color: Colors.amber),
+                          child: Center(
+                            child: Text(
+                              "$size",
+                              style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        )),
                     ListTile(
                       leading: const Icon(
                         Icons.leaderboard,
@@ -157,150 +213,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ))),
-    );
-  }
-}
-
-class AdminRoute extends StatefulWidget {
-  const AdminRoute({super.key, required this.theme});
-
-  final bool theme;
-
-  @override
-  State<AdminRoute> createState() => _AdminRouteState();
-}
-
-class _AdminRouteState extends State<AdminRoute> {
-  final GlobalKey<FormState> _formKey = GlobalKey();
-
-  TextEditingController idController = TextEditingController();
-
-  @override
-  void dispose() {
-    idController.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "AdminRoute",
-      debugShowCheckedModeBanner: false,
-      darkTheme: ThemeData.dark(),
-      themeMode: (widget.theme) ? ThemeMode.dark : ThemeMode.light,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("Admin's Route"),
-          leading: InkWell(
-            onTap: (() => Navigator.of(context).pop()),
-            child: const Icon(Icons.arrow_back),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: (() {
-                  showDialog(
-                      context: context,
-                      builder: ((context) {
-                        return AlertDialog(
-                          content: SizedBox(
-                            height: 150,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Form(
-                                  key: _formKey,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: TextFormField(
-                                      validator: ((value) {
-                                        if (value == null || value.isEmpty) {
-                                          return "value cannot be empty";
-                                        } else {
-                                          return null;
-                                        }
-                                      }),
-                                      controller: idController,
-                                      decoration: const InputDecoration(
-                                          labelText: 'Key id'),
-                                    ),
-                                  ),
-                                ),
-                                TextButton.icon(
-                                  onPressed: (() => Navigator.of(context).push(
-                                      const RealtimeElection().route(AdminLogin(
-                                          theme: widget.theme,
-                                          id: idController.text)))),
-                                  icon: const Icon(Icons.arrow_forward),
-                                  label: const Text('Proceed'),
-                                )
-                              ],
-                            ),
-                          ),
-                        );
-                      }));
-                }),
-                child: const Text("ADMIN"),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 20.0),
-                child: ElevatedButton(
-                  onPressed: (() {
-                    showDialog(
-                        context: context,
-                        builder: ((context) {
-                          return AlertDialog(
-                            content: SizedBox(
-                              height: 150,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Form(
-                                    key: _formKey,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: TextFormField(
-                                        validator: ((value) {
-                                          if (value == null || value.isEmpty) {
-                                            return "value cannot be empty";
-                                          } else {
-                                            return null;
-                                          }
-                                        }),
-                                        controller: idController,
-                                        decoration: const InputDecoration(
-                                            labelText: 'Key id'),
-                                      ),
-                                    ),
-                                  ),
-                                  TextButton.icon(
-                                    onPressed: (() => Navigator.of(context)
-                                        .push(const RealtimeElection().route(
-                                            SubAdminLogin(
-                                                theme: widget.theme,
-                                                id: idController.text)))),
-                                    icon: const Icon(Icons.arrow_forward),
-                                    label: const Text('Proceed'),
-                                  )
-                                ],
-                              ),
-                            ),
-                          );
-                        }));
-                  }),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text("SUBADMIN"),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
